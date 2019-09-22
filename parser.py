@@ -38,9 +38,11 @@ def get_page_data(html):
     line = []
     for row in table.find_all("tr")[1:]:
         line.append([td.get_text() for td in row.find_all("td")])
-    
+
+    # Creating dataframe to manage the data    
     df = pd.DataFrame(line, columns = cols)
 
+    # Fixing drivers names as official abbreviations
     df['Driver'] = [x.replace('\n', ' ')[-4:] for x in df['Driver']]
 
     return df
@@ -169,18 +171,21 @@ def main():
         else:
             number = True         
 
+    # Getting races list
     for year in range(int(starting_year), 2020):
         url = 'https://www.formula1.com/en/results.html/' + str(year) + '/races.html'
         all_races.append(links_list(get_html(url)))
 
     races = [item for sublist in all_races for item in sublist]
 
+    # Checking data directories existance
     if not os.path.exists('./data/'): os.mkdir('./data/')
     for session_dir in ['practice-1', 'practice-2', 'practice-3', 'qualifying', 'race']:
         if not os.path.exists('./data/' + session_dir): os.mkdir('./data/' + session_dir) 
 
     data_path = './data/'
 
+    # Start parsing
     print()
     print('PARSING PRACTICES', end = '\n\n')
     practice_parse(races, data_path)
@@ -190,6 +195,9 @@ def main():
     print()
     print('PARSING RACES', end = '\n\n')
     race_parse(races, data_path)
+
+    print()
+    print('It is done!')
 
 if __name__ == '__main__':
     main()
