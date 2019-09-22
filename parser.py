@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import datetime
+import datetime, os
 from gc import collect
 
 # Parsing the list of available races
@@ -47,128 +47,96 @@ def get_page_data(html):
 
 # Parsing practice sessions
 
-def practice_parse(races):
+def practice_parse(races, data_path):
 
-    print(races[0][0], races[0][2])
-
-    race_first = races[0]
-
-    base_url = 'https://www.formula1.com/en/results.html/' + race_first[0] + '/races/' + race_first[1] + '/' + race_first[2] + '/'
-
-    # Parsing 3 practice sessions into one table
-    ses = 'practice-1'
-    url_gen = base_url + ses + '.html'
-    html = get_html(url_gen)
-    df = get_page_data(html)
-    df['Session'] = ses
-
-    for ses in ['practice-2', 'practice-3']:
-        url_gen = base_url + ses + '.html'
-        html = get_html(url_gen)
-        df_new = get_page_data(html)
-        df_new['Session'] = ses
-        df = df.append(df_new, ignore_index = True, sort = False)
-
-    df['Year'] = race_first[0]
-    df['Race_no'] = race_first[1]
-    df['Track'] = race_first[2]
-
-    for race in races[1:]:
+    for race in races:
 
         print(race[0], race[2])
 
         base_url = 'https://www.formula1.com/en/results.html/' + race[0] + '/races/' + race[1] + '/' + race[2] + '/'
-
+         
+        # Parsing 3 practice sessions separately into tables
         for ses in ['practice-1', 'practice-2', 'practice-3']:
+
+            # Check if file exists
+            if os.path.isfile(data_path + ses + '/' + race[0] + '_' + race[1] + '_' + race[2] + '.csv'):
+                continue
+
+            # If not, parse it
             url_gen = base_url + ses + '.html'
             html = get_html(url_gen)
-            df_new = get_page_data(html)
-            df_new['Session'] = ses
-            df_new['Year'] = race[0]
-            df_new['Race_no'] = race[1]
-            df_new['Track'] = race[2]
-            df = df.append(df_new, ignore_index = True)
+            df = get_page_data(html)
+            df['Session'] = ses
+            df['Year'] = race[0]
+            df['Race_no'] = race[1]
+            df['Track'] = race[2]
+            df.to_csv(data_path + ses + '/' + race[0] + '_' + race[1] + '_' + race[2] + '.csv', index = False)
 
-    df.to_csv('practice.csv', index = False)
-    del df, df_new
+    try:
+        del df
+    except UnboundLocalError:
+        pass
     collect()
 
 
 # Parsing qualifications
 
-def qualification_parse(races):
+def qualification_parse(races, data_path):
 
-    print(races[0][0], races[0][2])
-
-    race_first = races[0]
-
-    base_url = 'https://www.formula1.com/en/results.html/' + race_first[0] + '/races/' + race_first[1] + '/' + race_first[2] + '/'
-
-    # Parsing 3 practice sessions into one table
-    ses = 'qualifying'
-    url_gen = base_url + ses + '.html'
-    html = get_html(url_gen)
-    df = get_page_data(html)
-
-    df['Year'] = race_first[0]
-    df['Race_no'] = race_first[1]
-    df['Track'] = race_first[2]
-
-    for race in races[1:]:
+    for race in races:
 
         print(race[0], race[2])
 
         #https://www.formula1.com/en/results.html/2019/races/1013/italy/practice-3.html
         url_gen = 'https://www.formula1.com/en/results.html/' + race[0] + '/races/' + race[1] + '/' + race[2] + '/qualifying.html'
 
-        html = get_html(url_gen)
-        df_new = get_page_data(html)
-        df_new['Year'] = race[0]
-        df_new['Race_no'] = race[1]
-        df_new['Track'] = race[2]
-        df = df.append(df_new, ignore_index = True, sort = False)
+        # Check if file exists
+        if os.path.isfile(data_path + 'qualifying/' + race[0] + '_' + race[1] + '_' + race[2] + '.csv'):
+            continue
 
-    df.to_csv('qualification.csv', index = False)
-    del df, df_new
+        # If not, parse it
+        html = get_html(url_gen)
+        df = get_page_data(html)
+        df['Year'] = race[0]
+        df['Race_no'] = race[1]
+        df['Track'] = race[2]
+        df.to_csv(data_path + 'qualifying/' + race[0] + '_' + race[1] + '_' + race[2] + '.csv', index = False)
+
+    try:
+        del df
+    except UnboundLocalError:
+        pass
     collect()
 
 
 # Parsing races
 
-def race_parse(races):
+def race_parse(races, data_path):
 
-    race_first = races[0]
-
-    print(races[0][0], races[0][2])
-
-    base_url = 'https://www.formula1.com/en/results.html/' + race_first[0] + '/races/' + race_first[1] + '/' + race_first[2] + '/'
-
-    # Parsing 3 practice sessions into one table
-    ses = 'race_result'
-    url_gen = base_url + ses + '.html'
-    html = get_html(url_gen)
-    df = get_page_data(html)
-
-    df['Year'] = race_first[0]
-    df['Race_no'] = race_first[1]
-    df['Track'] = race_first[2]
-
-    for race in races[1:]:
+    for race in races:
 
         print(race[0], race[2])
 
         #https://www.formula1.com/en/results.html/2019/races/1013/italy/practice-3.html
         url_gen = 'https://www.formula1.com/en/results.html/' + race[0] + '/races/' + race[1] + '/' + race[2] + '/race_result.html'
 
-        html = get_html(url_gen)
-        df_new = get_page_data(html)
-        df_new['Year'] = race[0]
-        df_new['Race_no'] = race[1]
-        df_new['Track'] = race[2]
-        df = df.append(df_new, ignore_index = True)
+        # Check if file exists
+        if os.path.isfile(data_path + 'race/' + race[0] + '_' + race[1] + '_' + race[2] + '.csv'):
+            continue
 
-    df.to_csv('race.csv', index = False)
-    del df, df_new
+        # If not, parse it
+
+        html = get_html(url_gen)
+        df = get_page_data(html)
+        df['Year'] = race[0]
+        df['Race_no'] = race[1]
+        df['Track'] = race[2]
+        df.to_csv(data_path + 'race/' + race[0] + '_' + race[1] + '_' + race[2] + '.csv', index = False)
+
+    try:
+        del df
+    except UnboundLocalError:
+        pass
     collect()
 
 # Main function
@@ -207,15 +175,21 @@ def main():
 
     races = [item for sublist in all_races for item in sublist]
 
+    if not os.path.exists('./data/'): os.mkdir('./data/')
+    for session_dir in ['practice-1', 'practice-2', 'practice-3', 'qualifying', 'race']:
+        if not os.path.exists('./data/' + session_dir): os.mkdir('./data/' + session_dir) 
+
+    data_path = './data/'
+
     print()
     print('PARSING PRACTICES', end = '\n\n')
-    practice_parse(races)
+    practice_parse(races, data_path)
     print()
     print('PARSING QUALIFICATIONS', end = '\n\n')
-    qualification_parse(races)
+    qualification_parse(races, data_path)
     print()
     print('PARSING RACES', end = '\n\n')
-    race_parse(races)
+    race_parse(races, data_path)
 
 if __name__ == '__main__':
     main()
